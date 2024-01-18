@@ -141,10 +141,7 @@ public class FlightController
         {
             try
             {
-                if (vessel == null)
-                {
-                    vessel = Vehicle.ActiveVesselVehicle;
-                }
+                vessel = Vehicle.ActiveVesselVehicle;
 
                 if (vessel != null)
                 {

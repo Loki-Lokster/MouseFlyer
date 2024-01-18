@@ -54,6 +54,8 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
 
     void Awake() {
         try {
+
+            
             // Load config
             string configPath = Path.Combine(BepInEx.Paths.ConfigPath, $"{ModName}.cfg");
             config = new CustomConfig(new ConfigFile(configPath, true));
