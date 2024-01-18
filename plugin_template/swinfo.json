@@ -1,0 +1,23 @@
+{
+  "spec": "2.0",
+  "mod_id": "MouseFlyer",
+  "author": "Loki_Lokster",
+  "name": "MouseFlyer",
+  "description": "Allows you to fly using the mouse instead of WASD controls",
+  "source": "",
+  "version": "1.0.1",
+  "version_check": "",
+  "ksp2_version": {
+    "min": "0.2.0",
+    "max": "*"
+  },
+  "dependencies": [
+    {
+      "id": "com.github.x606.spacewarp",
+      "version": {
+        "min": "1.7.0",
+        "max": "*"
+      }
+    }
+  ]
+}
