@@ -6,7 +6,7 @@
   "description": "Allows you to fly using the mouse instead of WASD controls",
   "source": "",
   "version": "1.0.1",
-  "version_check": "",
+  "version_check": "https://raw.githubusercontent.com/Loki-Lokster/MouseFlyer/main/plugin_template/swinfo.json",
   "ksp2_version": {
     "min": "0.2.0",
     "max": "*"

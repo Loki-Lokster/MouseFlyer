@@ -8,16 +8,17 @@ public class FlightController
 {
     private Settings settings;
     private KSP.Sim.impl.VesselVehicle vessel;
-    private MouseFlyerPlugin plugin;
+    private UIManager uiManager;
 
     // Variables
     public static Vector2 lastInput { get; private set; } = Vector2.zero;
 
     // Constructor
-    public FlightController(Settings settings, KSP.Sim.impl.VesselVehicle vessel)
+    public FlightController(Settings settings, KSP.Sim.impl.VesselVehicle vessel, UIManager uiManager)
     {
         this.settings = settings;
         this.vessel = vessel;
+        this.uiManager = uiManager;
     }
     
     public void HandleKeyPresses()
@@ -25,10 +26,7 @@ public class FlightController
         // If the Escape key is pressed or IsMouseSteering is disabled, unlock the cursor
         if (Input.GetKeyDown(KeyCode.Escape) || !settings.IsMouseSteeringEnabled)
         {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            settings.IsCursorLocked = false;
-            settings.IsMouseSteeringEnabled = false;
+            uiManager.SetCursorState(null);
         }
 
         // If the enable steering mode key is pressed
@@ -36,9 +34,9 @@ public class FlightController
         {
             settings.IsMouseSteeringEnabled = !settings.IsMouseSteeringEnabled; // Toggle mouse steering
 
-            if (settings.IsMouseSteeringEnabled)
+            if (settings.IsMouseSteeringEnabled && settings.IsAutoCamEnabled)
             {
-                // Set the camera to chase mode, havent figured out how to do this yet
+                // Set the camera to chase mode
                 GameManager.Instance.Game.CameraManager.FlightCamera.SelectCameraMode(KSP.Sim.CameraMode.Chase);
 
             }
@@ -76,15 +74,10 @@ public class FlightController
         switch (settings.CurrentFlyingMode)
         {
             case Settings.FlyingMode.Alternative:
-                // Unlock the cursor
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                // Change the cursor to a crosshair
-                Texture2D cursorTexture = AssetManager.GetAsset<Texture2D>($"{MouseFlyerPlugin.ModGuid}/images/icon.png");
-                Cursor.SetCursor(cursorTexture, Vector2.zero, CursorMode.Auto);
+                // Set the cursor state
+                uiManager.SetCursorState(settings.CurrentFlyingMode);
                 
-                settings.IsCursorLocked = false;
-
+                // Measure x,y distance from center of screen to mouse position and multiply 
                 Vector3 mousePosition = Input.mousePosition;
                 float roll = ((mousePosition.x / Screen.width - 0.5f) * 2f) * settings.RollSensitivity;
                 float pitch = ((mousePosition.y / Screen.height - 0.5f) * 2f * (settings.IsYAxisInverted ? -1 : 1)) * settings.PitchSensitivity;
@@ -100,9 +93,7 @@ public class FlightController
                 // Only lock the cursor if it's not already locked
                 if (!settings.IsCursorLocked)
                 {
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
-                    settings.IsCursorLocked = true;
+                    uiManager.SetCursorState(settings.CurrentFlyingMode);
                 }
 
                 // Get the mouse movement
@@ -116,10 +107,7 @@ public class FlightController
                 break;
 
             default:
-                // Unlock the cursor
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-                settings.IsCursorLocked = false;
+                uiManager.SetCursorState(null);
 
                 input = Vector2.zero;
                 break;
@@ -135,6 +123,7 @@ public class FlightController
 
     void ApplyMouseInputToVessel(Vector2 mouseInput)
     {
+        // Apply the roll and pitch to the vessel
         vessel.SetRoll(mouseInput.x);
         vessel.SetPitch(mouseInput.y);
 

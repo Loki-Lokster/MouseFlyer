@@ -12,6 +12,7 @@ public class CustomConfig
 
     private ConfigEntry<float> smoothingFactor;
     private ConfigEntry<bool> isYAxisInverted;
+    private ConfigEntry<bool> isAutoCamEnabled;
     private ConfigEntry<float> deadzone;
     private ConfigEntry<float> rollSensitivity;
     private ConfigEntry<float> pitchSensitivity;
@@ -70,6 +71,13 @@ public class CustomConfig
     }
 
     [PublicAPI]
+    public bool IsAutoCamEnabled
+    {
+        get => isAutoCamEnabled.Value;
+        set => isAutoCamEnabled.Value = value;
+    }
+
+    [PublicAPI]
     public  KeyCode ToggleFlyingModeKey
     {
         get => toggleFlyingModeKey.Value;
@@ -103,6 +111,7 @@ public class CustomConfig
         _configFile = configFile;
         smoothingFactor = _configFile.Bind("MouseFlyer", "SmoothingFactor", 0.05f, "Smoothing factor for mouse input");
         isYAxisInverted = _configFile.Bind("MouseFlyer", "IsYAxisInverted", true, "Invert the Y-axis for mouse input");
+        isAutoCamEnabled = _configFile.Bind("MouseFlyer", "IsAutoCamEnabled", true, "Choose whether the camera automaitcally changes to Chase");
         deadzone = _configFile.Bind("MouseFlyer", "Deadzone", 0.01f, "Deadzone for mouse input");
         rollSensitivity = _configFile.Bind("MouseFlyer", "RollSensitivity", 0.2f, "Roll sensitivity for mouse input");
         pitchSensitivity = _configFile.Bind("MouseFlyer", "PitchSensitivity", 0.9f, "Pitch sensitivity for mouse input");

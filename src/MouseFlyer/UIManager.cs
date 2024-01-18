@@ -1,10 +1,10 @@
 using MouseFlyer;
 using SpaceWarp.API.Assets;
 using UnityEngine;
+using UnityEditor;
 public class UIManager
 {
     private Settings settings;
-    private MouseFlyerPlugin plugin;
     private CustomConfig config;
 
     // Fonts
@@ -12,10 +12,9 @@ public class UIManager
     private GUIStyle smallLabelStyle;
     private GUIStyle detailsLabelStyle;
 
-    public UIManager(Settings settings, MouseFlyerPlugin plugin, CustomConfig config)
+    public UIManager(Settings settings, CustomConfig config)
     {
         this.settings = settings;
-        this.plugin = plugin;
         this.config = config;
         Init_Fonts();
     }
@@ -55,8 +54,10 @@ public class UIManager
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
                 // Change the cursor to a custom texture
-                Texture2D cursorTexture = AssetManager.GetAsset<Texture2D>($"{MouseFlyerPlugin.ModGuid}/images/icon.png");
+                Texture2D cursorTexture = AssetManager.GetAsset<Texture2D>($"{MouseFlyerPlugin.ModGuid}/images/crosshair.png");
                 Cursor.SetCursor(cursorTexture, Vector2.zero, CursorMode.Auto);
+
+                settings.IsCursorLocked = false;
                 break;
 
             case Settings.FlyingMode.Normal:
@@ -64,6 +65,8 @@ public class UIManager
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
                 Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+
+                settings.IsCursorLocked = true;
                 break;
 
             case null:
@@ -71,6 +74,8 @@ public class UIManager
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
                 Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+
+                settings.IsCursorLocked = false;
                 break;
         }
     }
@@ -113,28 +118,71 @@ public class UIManager
             GUILayout.Label("Mouse cursor is unlocked and roll/pitch rate is based on distance from the center of the screen. Deadzone can be configured.", detailsLabelStyle);
         }
         
+        // Mouse steering toggle
         settings.IsMouseSteeringEnabled = GUILayout.Toggle(settings.IsMouseSteeringEnabled, "Enable Mouse Steering (" + settings.ToggleMouseSteeringKey.ToString() + ")", GUILayout.ExpandWidth(false));
-        settings.IsYAxisInverted = GUILayout.Toggle(settings.IsYAxisInverted, "Invert Y Axis", GUILayout.ExpandWidth(false));
-        // Roll sensitivity slider
-        GUILayout.Label("Roll Sensitivity: " + settings.RollSensitivity.ToString("0.00"), boldLabelStyle);
-        settings.RollSensitivity = GUILayout.HorizontalSlider(settings.RollSensitivity, 0.01f, 4.0f);
-
-        // Pitch sensitivity slider
-        GUILayout.Label("Pitch Sensitivity: " + settings.PitchSensitivity.ToString("0.00"), boldLabelStyle);
-        settings.PitchSensitivity = GUILayout.HorizontalSlider(settings.PitchSensitivity, 0.01f, 4.0f);
-
-        // Yaw correction slider
-        GUILayout.Label("Yaw Correction: " + settings.YawCorrection.ToString("0.00"), boldLabelStyle);
-        settings.YawCorrection = GUILayout.HorizontalSlider(settings.YawCorrection, 0.0f, 1.0f);
         
-        // Deadzone slider
-        if (settings.CurrentFlyingMode == Settings.FlyingMode.Alternative){
-            GUILayout.Label("Deadzone: " + settings.Deadzone.ToString("0.00"), boldLabelStyle);
-            settings.Deadzone = GUILayout.HorizontalSlider(settings.Deadzone, 0.0f, 0.5f);
+        // Invert Y axis toggle
+        settings.IsYAxisInverted = GUILayout.Toggle(settings.IsYAxisInverted, "Invert Y Axis", GUILayout.ExpandWidth(false));
+        
+        // Auto cam toggle
+        settings.IsAutoCamEnabled = GUILayout.Toggle(settings.IsAutoCamEnabled, "Enable Auto Chase Cam", GUILayout.ExpandWidth(false));
+        
+        // Roll sensitivity input
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Roll Sensitivity:");
+        float rollSensitivity;
+        if (float.TryParse(GUILayout.TextField(settings.RollSensitivity.ToString("0.00"), GUILayout.ExpandWidth(false)), out rollSensitivity))
+        {
+            settings.RollSensitivity = rollSensitivity;
+        }
+        GUILayout.EndHorizontal();
+        settings.RollSensitivity = GUILayout.HorizontalSlider(settings.RollSensitivity, 0.0f, 5f);
+
+        // Pitch sensitivity input
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Pitch Sensitivity:");
+        float pitchSensitivity;
+        if (float.TryParse(GUILayout.TextField(settings.PitchSensitivity.ToString("0.00"), GUILayout.ExpandWidth(false)), out pitchSensitivity))
+        {
+            settings.PitchSensitivity = pitchSensitivity;
+        }
+        GUILayout.EndHorizontal();
+        settings.PitchSensitivity = GUILayout.HorizontalSlider(settings.PitchSensitivity, 0.0f, 5f);
+
+        // Yaw correction input
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Yaw Correction:");
+        float yawCorrection;
+        if (float.TryParse(GUILayout.TextField(settings.YawCorrection.ToString("0.00"), GUILayout.ExpandWidth(false)), out yawCorrection))
+        {
+            settings.YawCorrection = yawCorrection;
+        }
+        GUILayout.EndHorizontal();
+        settings.YawCorrection = GUILayout.HorizontalSlider(settings.YawCorrection, 0.0f, 5f);
+
+        // Deadzone input
+        if (settings.CurrentFlyingMode == Settings.FlyingMode.Alternative)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Deadzone:");
+            float deadzone;
+            if (float.TryParse(GUILayout.TextField(settings.Deadzone.ToString("0.00"), GUILayout.ExpandWidth(false)), out deadzone))
+            {
+                settings.Deadzone = deadzone;
+            }
+            GUILayout.EndHorizontal();
+            settings.Deadzone = GUILayout.HorizontalSlider(settings.Deadzone, 0.0f, 1.0f);
         }
 
-        // Smoothing slider
-        GUILayout.Label("Smoothing: " + settings.SmoothingFactor.ToString("0.00"), boldLabelStyle);
+        // Smoothing input
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Smoothing:");
+        float smoothingFactor;
+        if (float.TryParse(GUILayout.TextField(settings.SmoothingFactor.ToString("0.00"), GUILayout.ExpandWidth(false)), out smoothingFactor))
+        {
+            settings.SmoothingFactor = smoothingFactor;
+        }
+        GUILayout.EndHorizontal();
         settings.SmoothingFactor = GUILayout.HorizontalSlider(settings.SmoothingFactor, 0.0f, 1.0f);
 
         // Horizontal line

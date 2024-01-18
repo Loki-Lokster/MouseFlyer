@@ -19,6 +19,7 @@ public class Settings
     public bool ShowDebugValues { get; set; }
     public bool IsCursorLocked { get; set; }
     public bool IsWindowOpen { get; set; }
+    public bool IsAutoCamEnabled { get; set; }
     public KeyCode ToggleFlyingModeKey { get; set; }
     public KeyCode ToggleMouseSteeringKey { get; set; }
     public KeyCode ToggleMenuKey { get; set; }

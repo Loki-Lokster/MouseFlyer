@@ -63,6 +63,7 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
             {
                 CurrentFlyingMode = config.FlyingMode,
                 IsMouseSteeringEnabled = false,
+                IsAutoCamEnabled = config.IsAutoCamEnabled,
                 IsYAxisInverted = config.IsYAxisInverted,
                 RollSensitivity = config.RollSensitivity,
                 PitchSensitivity = config.PitchSensitivity,
@@ -78,10 +79,10 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
             };
 
             // Load UI
-            uiManager = new UIManager(settings, Instance, config);
+            uiManager = new UIManager(settings, config);
 
             // Load the flight controller
-            flightController = new FlightController(settings, Vessel);
+            flightController = new FlightController(settings, Vessel, uiManager);
 
             Logger.LogInfo("MouseFlyer loaded successfully.");
         }
@@ -89,7 +90,6 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
         catch (Exception e)
         {
             Logger.LogError($"Error loading MouseFlyer: {e}");
-            return;
         }
                 
     }
