@@ -61,24 +61,7 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
             config = new CustomConfig(new ConfigFile(configPath, true));
 
             // Load settings
-            settings = new Settings
-            {
-                CurrentFlyingMode = config.FlyingMode,
-                IsMouseSteeringEnabled = false,
-                IsAutoCamEnabled = config.IsAutoCamEnabled,
-                IsYAxisInverted = config.IsYAxisInverted,
-                RollSensitivity = config.RollSensitivity,
-                PitchSensitivity = config.PitchSensitivity,
-                YawCorrection = config.YawCorrection,
-                Deadzone = config.Deadzone,
-                SmoothingFactor = config.SmoothingFactor,
-                ShowDebugValues = false,
-                IsCursorLocked = false,
-                IsWindowOpen = false,
-                ToggleFlyingModeKey = config.ToggleFlyingModeKey,
-                ToggleMouseSteeringKey = config.ToggleMouseSteeringKey,
-                ToggleMenuKey = config.ToggleMenuKey
-            };
+            settings = new Settings(config);
 
             // Load UI
             uiManager = new UIManager(settings, config);
