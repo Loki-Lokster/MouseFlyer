@@ -20,68 +20,69 @@ public class FlightController
         this.settings = settings;
         this.vessel = vessel;
         this.uiManager = uiManager;
+        
     }
     
     public void HandleKeyPresses()
     {
         // If the Escape key is pressed or IsMouseSteering is disabled, unlock the cursor and disable steering
-        if (Input.GetKeyDown(KeyCode.Escape) || !settings.IsMouseSteeringEnabled)
+        if (Input.GetKeyDown(KeyCode.Escape) || !settings.Runtime.IsMouseSteeringEnabled)
         {
-            settings.IsMouseSteeringEnabled = false;
+            settings.Runtime.IsMouseSteeringEnabled = false;
             uiManager.SetCursorState(null);
         }
 
         // If the enable steering mode key is pressed
-        if (Input.GetKeyDown(settings.ToggleMouseSteeringKey) || settings.IsMouseSteeringEnabled != previousMouseSteeringState)
+        if (Input.GetKeyDown(settings.Global.ToggleMouseSteeringKey.Value) || settings.Runtime.IsMouseSteeringEnabled != previousMouseSteeringState)
         {
-            settings.IsMouseSteeringEnabled = !settings.IsMouseSteeringEnabled; // Toggle mouse steering
+            settings.Runtime.IsMouseSteeringEnabled = !settings.Runtime.IsMouseSteeringEnabled; // Toggle mouse steering
 
-            if (settings.IsMouseSteeringEnabled && settings.CurrentProfile.IsAutoCamEnabled.Value)
+            if (settings.Runtime.IsMouseSteeringEnabled && settings.ActiveProfile.IsAutoCamEnabledCopy)
             {
                 // Set the camera to chase mode
                 GameManager.Instance.Game.CameraManager.FlightCamera.SelectCameraMode(KSP.Sim.CameraMode.Chase);
 
             }
 
-            else if (!settings.IsMouseSteeringEnabled && settings.CurrentProfile.IsAutoCamEnabled.Value){
+            else if (!settings.Runtime.IsMouseSteeringEnabled && settings.ActiveProfile.IsAutoCamEnabledCopy){
                 // Set to Auto camera
                 GameManager.Instance.Game.CameraManager.FlightCamera.SelectCameraMode(KSP.Sim.CameraMode.Auto);
             }
 
-            previousMouseSteeringState = settings.IsMouseSteeringEnabled;
+            previousMouseSteeringState = settings.Runtime.IsMouseSteeringEnabled;
         }
 
         // If the menu key is pressed, toggle the window
-        if (Input.GetKeyDown(settings.ToggleMenuKey))
+        if (Input.GetKeyDown(settings.Global.ToggleMenuKey.Value))
         {
-            settings.IsWindowOpen = !settings.IsWindowOpen;
+            settings.Runtime.IsWindowOpen = !settings.Runtime.IsWindowOpen;
         }
 
         // If the flying mode key is pressed, toggle the flying mode
-        if (Input.GetKeyDown(settings.ToggleFlyingModeKey))
+        if (Input.GetKeyDown(settings.Global.ToggleFlyingModeKey.Value))
         {
-            if (settings.CurrentFlyingMode == Settings.FlyingMode.Normal)
+            if (settings.Global.CurrentFlyingMode.Value == GlobalSettings.FlyingMode.Normal)
             {
-                settings.CurrentFlyingMode = Settings.FlyingMode.Alternative;
+                settings.Global.CurrentFlyingMode.Value = GlobalSettings.FlyingMode.Alternative;
             }
             else
             {
-                settings.CurrentFlyingMode = Settings.FlyingMode.Normal;
+                settings.Global.CurrentFlyingMode.Value = GlobalSettings.FlyingMode.Normal;
             }
         }
 
-        if (Input.GetKeyDown(settings.PreviousProfileKey))
+        if (Input.GetKeyDown(settings.Global.PreviousProfileKey.Value))
         {
-            int currentIndex = settings.config.Profiles.IndexOf(settings.CurrentProfile);
-            int newIndex = (currentIndex - 1 + settings.config.Profiles.Count) % settings.config.Profiles.Count;
-            settings.CurrentProfile = settings.config.Profiles[newIndex];
+            int currentIndex = settings.ProfileManager.Profiles.ToList().IndexOf(settings.ProfileManager.ActiveProfile);
+            int newIndex = (currentIndex - 1 + settings.ProfileManager.Profiles.Count) % settings.ProfileManager.Profiles.Count;
+            settings.ProfileManager.SetActiveProfile(settings.ProfileManager.Profiles[newIndex]);
         }
 
-        if (Input.GetKeyDown(settings.NextProfileKey))
+        if (Input.GetKeyDown(settings.Global.NextProfileKey.Value))
         {
-            int currentIndex = settings.config.Profiles.IndexOf(settings.CurrentProfile);
-            int newIndex = (currentIndex + 1) % settings.config.Profiles.Count;
-            settings.CurrentProfile = settings.config.Profiles[newIndex];
+            int currentIndex = settings.ProfileManager.Profiles.ToList().IndexOf(settings.ProfileManager.ActiveProfile);
+            int newIndex = (currentIndex + 1) % settings.ProfileManager.Profiles.Count;
+            settings.ProfileManager.SetActiveProfile(settings.ProfileManager.Profiles[newIndex]);
         }
     }
 
@@ -89,37 +90,37 @@ public class FlightController
     {
         Vector2 input;
 
-        switch (settings.CurrentFlyingMode)
+        switch (settings.Global.CurrentFlyingMode.Value)
         {
-            case Settings.FlyingMode.Alternative:
+            case GlobalSettings.FlyingMode.Alternative:
                 // Set the cursor state
-                uiManager.SetCursorState(settings.CurrentFlyingMode);
+                uiManager.SetCursorState(settings.Global.CurrentFlyingMode.Value);
                 
                 // Measure x,y distance from center of screen to mouse position and multiply 
                 Vector3 mousePosition = Input.mousePosition;
-                float roll = ((mousePosition.x / Screen.width - 0.5f) * 2f) * settings.CurrentProfile.RollSensitivity.Value;
-                float pitch = ((mousePosition.y / Screen.height - 0.5f) * 2f * (settings.CurrentProfile.IsYAxisInverted.Value ? -1 : 1)) * settings.CurrentProfile.PitchSensitivity.Value;
+                float roll = ((mousePosition.x / Screen.width - 0.5f) * 2f) * settings.ActiveProfile.RollSensitivityCopy;
+                float pitch = ((mousePosition.y / Screen.height - 0.5f) * 2f * (settings.ActiveProfile.IsYAxisInvertedCopy ? -1 : 1)) * settings.ActiveProfile.PitchSensitivityCopy;
 
                 // Deadzone
-                if (Mathf.Abs(roll) < settings.CurrentProfile.Deadzone.Value) roll = 0;
-                if (Mathf.Abs(pitch) < settings.CurrentProfile.Deadzone.Value) pitch = 0;
+                if (Mathf.Abs(roll) < settings.ActiveProfile.DeadzoneCopy) roll = 0;
+                if (Mathf.Abs(pitch) < settings.ActiveProfile.DeadzoneCopy) pitch = 0;
 
                 input = new Vector2(roll, pitch);
                 break;
 
-            case Settings.FlyingMode.Normal:
+            case GlobalSettings.FlyingMode.Normal:
                 // Only lock the cursor if it's not already locked
-                if (!settings.IsCursorLocked)
+                if (!settings.Runtime.IsCursorLocked)
                 {
-                    uiManager.SetCursorState(settings.CurrentFlyingMode);
+                    uiManager.SetCursorState(settings.Global.CurrentFlyingMode.Value);
                 }
 
                 // Get the mouse movement
                 Vector2 mouseMovement = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
 
                 // Adjust pitch and roll based on mouse movement and sensitivity
-                float altRoll = mouseMovement.x * settings.CurrentProfile.RollSensitivity.Value;
-                float altPitch = mouseMovement.y * settings.CurrentProfile.PitchSensitivity.Value * (settings.CurrentProfile.IsYAxisInverted.Value ? -1 : 1);
+                float altRoll = mouseMovement.x * settings.ActiveProfile.RollSensitivityCopy;
+                float altPitch = mouseMovement.y * settings.ActiveProfile.PitchSensitivityCopy* (settings.ActiveProfile.IsYAxisInvertedCopy ? -1 : 1);
                 
                 input = new Vector2(altRoll, altPitch);
                 break;
@@ -132,7 +133,7 @@ public class FlightController
         }
 
         // Smoothing
-        input = Vector2.Lerp(lastInput, input, settings.CurrentProfile.SmoothingFactor.Value);
+        input = Vector2.Lerp(lastInput, input, settings.ActiveProfile.SmoothingFactorCopy);
 
         lastInput = input;
 
@@ -146,7 +147,7 @@ public class FlightController
         vessel.SetPitch(mouseInput.y);
 
         // Calculate the yaw as a percentage of the roll
-        float yaw = mouseInput.x * settings.CurrentProfile.YawCorrection.Value;
+        float yaw = mouseInput.x * settings.ActiveProfile.YawCorrectionCopy;
 
         // Apply the yaw to the vessel
         vessel.SetYaw(yaw);
@@ -155,7 +156,7 @@ public class FlightController
 
     public void UpdateFlightControls()
     {
-        if (settings.IsMouseSteeringEnabled)
+        if (settings.Runtime.IsMouseSteeringEnabled)
         {
             try
             {

@@ -35,10 +35,11 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
     [PublicAPI] public static MouseFlyerPlugin Instance { get; set; }
 
     // Settings / Config / UI
-    public Settings settings;
-    private CustomConfig config;
+    private ConfigFile configFile;
     public UIManager uiManager;
     public FlightController flightController;
+    public ProfileManager profileManager;
+    public Settings settings;
 
     // UI
     private Rect _windowRect;
@@ -54,17 +55,28 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
 
     void Awake() {
         try {
-
             
             // Load config
             string configPath = Path.Combine(BepInEx.Paths.ConfigPath, $"{ModName}.cfg");
-            config = new CustomConfig(new ConfigFile(configPath, true));
+            configFile = new ConfigFile(configPath, true);
 
-            // Load settings
-            settings = new Settings(config);
+            // Create ProfileManager
+            profileManager = new ProfileManager(configFile, maxProfiles: 5); // Maximum 5 profiles
+
+            // Set the active profile to the first profile
+            profileManager.SetActiveProfile(profileManager.Profiles[0]);
+
+            // Create GlobalSettings
+            GlobalSettings globalSettings = new GlobalSettings(configFile);
+
+            // Create RuntimeState
+            RuntimeState runtimeState = new RuntimeState();
+
+            // Create Settings
+            settings = new Settings(profileManager, globalSettings, runtimeState);
 
             // Load UI
-            uiManager = new UIManager(settings, config);
+            uiManager = new UIManager(settings);
 
             // Load the flight controller
             flightController = new FlightController(settings, Vessel, uiManager);
@@ -107,7 +119,7 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
             AssetManager.GetAsset<Texture2D>($"{ModGuid}/images/icon.png"),
             isOpen =>
             {
-                settings.IsWindowOpen = isOpen;
+                settings.Runtime.IsWindowOpen = isOpen;
                 GameObject.Find(ToolbarFlightButtonID)?.GetComponent<UIValue_WriteBool_Toggle>()?.SetValue(isOpen);
             }
         );
@@ -124,7 +136,7 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
         // Set the UI
         GUI.skin = Skins.ConsoleSkin;
 
-        if (settings.IsWindowOpen)
+        if (settings.Runtime.IsWindowOpen)
         {
             _windowRect = GUILayout.Window(
                 GUIUtility.GetControlID(FocusType.Passive),
