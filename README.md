@@ -2,7 +2,8 @@
 Allows you to fly in KSP2 using the mouse instead of WASD controls.
 
 
-![image](https://github.com/Loki-Lokster/MouseFlyer/assets/1657477/87bf4adb-7c2f-4b5b-ba26-ca19598e883e)
+![image](https://github.com/Loki-Lokster/MouseFlyer/assets/1657477/85306466-56bc-4807-bbd9-5cc7fc23b223)
+
 
 
 [Available on Spacedock](https://spacedock.info/mod/3549/MouseFlyer)
