@@ -68,4 +68,15 @@ public class Profile
     {
         configFile.Save();
     }
+
+    public void RevertChanges()
+    {
+        SmoothingFactorCopy = SmoothingFactor.Value;
+        IsYAxisInvertedCopy = IsYAxisInverted.Value;
+        IsAutoCamEnabledCopy = IsAutoCamEnabled.Value;
+        DeadzoneCopy = Deadzone.Value;
+        RollSensitivityCopy = RollSensitivity.Value;
+        PitchSensitivityCopy = PitchSensitivity.Value;
+        YawCorrectionCopy = YawCorrection.Value;
+    }
 }

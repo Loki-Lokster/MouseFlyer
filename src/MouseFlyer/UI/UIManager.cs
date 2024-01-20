@@ -203,10 +203,15 @@ public class UIManager
         // Horizontal line
         GUILayout.Box("", new GUILayoutOption[] { GUILayout.ExpandWidth(true), GUILayout.Height(1) });
 
-        if (GUILayout.Button("Save Settings"))
+        if (GUILayout.Button("Save Profile"))
         {
             settings.ProfileManager.ActiveProfile.ApplyChanges();
             settings.ProfileManager.ActiveProfile.SaveProfile();
+        }
+
+        if (GUILayout.Button("Revert Profile"))
+        {
+            settings.ProfileManager.ActiveProfile.RevertChanges();
         }
 
         // Debug values

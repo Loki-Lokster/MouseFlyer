@@ -25,30 +25,30 @@ public class FlightController
     
     public void HandleKeyPresses()
     {
-        // If the Escape key is pressed or IsMouseSteering is disabled, unlock the cursor and disable steering
-        if (Input.GetKeyDown(KeyCode.Escape) || !settings.Runtime.IsMouseSteeringEnabled)
+        // If the Escape key is pressed, unlock the cursor and disable steering
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
             settings.Runtime.IsMouseSteeringEnabled = false;
             uiManager.SetCursorState(null);
         }
 
-        // If the enable steering mode key is pressed
-        if (Input.GetKeyDown(settings.Global.ToggleMouseSteeringKey.Value) || settings.Runtime.IsMouseSteeringEnabled != previousMouseSteeringState)
+        // If IsMouseSteering is disabled, unlock the cursor
+        if (!settings.Runtime.IsMouseSteeringEnabled)
         {
+            uiManager.SetCursorState(null);
+        }
+
+        // If the enable steering mode key is pressed
+        if (Input.GetKeyDown(settings.Global.ToggleMouseSteeringKey.Value)) {
             settings.Runtime.IsMouseSteeringEnabled = !settings.Runtime.IsMouseSteeringEnabled; // Toggle mouse steering
+            SwitchCameraMode(); // Switch camera mode
 
-            if (settings.Runtime.IsMouseSteeringEnabled && settings.ActiveProfile.IsAutoCamEnabledCopy)
-            {
-                // Set the camera to chase mode
-                GameManager.Instance.Game.CameraManager.FlightCamera.SelectCameraMode(KSP.Sim.CameraMode.Chase);
+        }
 
-            }
-
-            else if (!settings.Runtime.IsMouseSteeringEnabled && settings.ActiveProfile.IsAutoCamEnabledCopy){
-                // Set to Auto camera
-                GameManager.Instance.Game.CameraManager.FlightCamera.SelectCameraMode(KSP.Sim.CameraMode.Auto);
-            }
-
+        // If the state of IsMouseSteeringEnabled has changed
+        if (settings.Runtime.IsMouseSteeringEnabled != previousMouseSteeringState)
+        {
+            SwitchCameraMode();
             previousMouseSteeringState = settings.Runtime.IsMouseSteeringEnabled;
         }
 
@@ -83,6 +83,22 @@ public class FlightController
             int currentIndex = settings.ProfileManager.Profiles.ToList().IndexOf(settings.ProfileManager.ActiveProfile);
             int newIndex = (currentIndex + 1) % settings.ProfileManager.Profiles.Count;
             settings.ProfileManager.SetActiveProfile(settings.ProfileManager.Profiles[newIndex]);
+        }
+    }
+
+    public void SwitchCameraMode()
+    {
+        var currentCameraMode = GameManager.Instance.Game.CameraManager.FlightCamera.Mode;
+
+        if (settings.Runtime.IsMouseSteeringEnabled && settings.ActiveProfile.IsAutoCamEnabledCopy && currentCameraMode != KSP.Sim.CameraMode.Chase)
+        {
+            // Set the camera to chase mode
+            GameManager.Instance.Game.CameraManager.FlightCamera.SelectCameraMode(KSP.Sim.CameraMode.Chase);
+        }
+        else if (!settings.Runtime.IsMouseSteeringEnabled && settings.ActiveProfile.IsAutoCamEnabledCopy && currentCameraMode != KSP.Sim.CameraMode.Auto)
+        {
+            // Set to Auto camera
+            GameManager.Instance.Game.CameraManager.FlightCamera.SelectCameraMode(KSP.Sim.CameraMode.Auto);
         }
     }
 
