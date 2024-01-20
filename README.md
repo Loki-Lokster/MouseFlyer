@@ -9,6 +9,7 @@ Allows you to fly in KSP2 using the mouse instead of WASD controls.
 [Available on Spacedock](https://spacedock.info/mod/3549/MouseFlyer)
 
 ### Features
+- 5 different profiles that can easily be switched through on the fly
 - Roll/Pitch Sensitivity
 - Mouse Smoothing
 - Y Axis Inversion
@@ -24,6 +25,8 @@ Allows you to fly in KSP2 using the mouse instead of WASD controls.
 - `I` Toggle Flying Mode
 - `O` Toggle Mouse Steering Enabled
 - `P` Toggle Menu Open/Close
+- `[` Previous Profile
+- `]` Next Profile
 
 
 ### Config
