@@ -1,3 +1,4 @@
+using BepInEx.Configuration;
 using MouseFlyer;
 using SpaceWarp.API.Assets;
 using UnityEngine;
@@ -9,6 +10,15 @@ public class UIManager
     private GUIStyle boldLabelStyle;
     private GUIStyle smallLabelStyle;
     private GUIStyle detailsLabelStyle;
+    private GUIStyle setKeyButtonStyle;
+
+    // Shortcut key bools
+    private bool isShortcutKeysFoldoutOpen = false;
+    private bool isSettingToggleMenuKey = false;
+    private bool isSettingFlyingModeKey = false;
+    private bool isSettingToggleSteeringKey = false;
+    private bool isSettingPreviousProfileKey = false;
+    private bool isSettingNextProfileKey = false;
 
     public UIManager(Settings settings)
     {
@@ -16,7 +26,9 @@ public class UIManager
         Init_Fonts();
     }
 
-    // Initialise the font styles, better way to do this but can't be bothered ¯\_(ツ)_/¯
+    /// <summary>
+    /// Initializes the fonts used by the UI manager.
+    /// </summary>
     private void Init_Fonts()
     {
         // Set the font style to bold and white
@@ -77,31 +89,189 @@ public class UIManager
     }
 
     /// <summary>
+    /// Draws a button for setting a key in the UI.
+    /// </summary>
+    /// <param name="settings">The settings object.</param>
+    /// <param name="keyName">The name of the key property.</param>
+    /// <param name="isSettingKey">A reference to a boolean indicating whether the user is currently setting a key.</param>
+    void DrawSetKeyButton(Settings settings, string keyName, ref bool isSettingKey)
+    {
+
+        setKeyButtonStyle = new GUIStyle(GUI.skin.button)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 12,
+            hover = { textColor = Color.yellow }
+
+        };
+
+        KeyCode currentKey = ((ConfigEntry<KeyCode>)settings.Global.GetType().GetProperty(keyName).GetValue(settings.Global, null)).Value;
+
+        if (isSettingKey)
+        {
+            setKeyButtonStyle.normal.background = MakeTex(2, 2, Color.green);
+            setKeyButtonStyle.normal.textColor = Color.red;
+
+            GUILayout.Button("Press any key", setKeyButtonStyle, GUILayout.Width(140));
+            SetNewShortcutKey(settings, keyName, ref isSettingKey);
+        }
+        else
+        {
+            if (GUILayout.Button(currentKey.ToString(), setKeyButtonStyle, GUILayout.Width(140)))
+            {
+                isSettingKey = true;
+            }
+        }
+
+        setKeyButtonStyle.normal.background = null;
+        setKeyButtonStyle.normal.textColor = Color.white;
+    }
+
+    /// <summary>
+    /// Sets a new shortcut key for a specific setting in the provided settings object.
+    /// </summary>
+    /// <param name="settings">The settings object to modify.</param>
+    /// <param name="keyName">The name of the setting key to modify.</param>
+    /// <param name="isSettingKey">A reference to a boolean indicating whether the key is being set.</param>
+    private void SetNewShortcutKey(Settings settings, string keyName, ref bool isSettingKey)
+    {
+        foreach (KeyCode keyCode in Enum.GetValues(typeof(KeyCode)))
+        {
+            if (Event.current.isKey && Event.current.keyCode == keyCode)
+            {
+                switch (keyName)
+                {
+                    case "ToggleMenuKey":
+                        settings.Global.ToggleMenuKey.Value = keyCode;
+                        break;
+                    
+                    case "ToggleFlyingModeKey":
+                        settings.Global.ToggleFlyingModeKey.Value = keyCode;
+                        break;
+
+                    case "ToggleMouseSteeringKey":
+                        settings.Global.ToggleMouseSteeringKey.Value = keyCode;
+                        break;
+
+                    case "PreviousProfileKey":
+                        settings.Global.PreviousProfileKey.Value = keyCode;
+                        break;
+
+                    case "NextProfileKey":
+                        settings.Global.NextProfileKey.Value = keyCode;
+                        break;
+                }
+                isSettingKey = false;
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a new Texture2D with the specified width, height, and color.
+    /// </summary>
+    /// <param name="width">The width of the texture.</param>
+    /// <param name="height">The height of the texture.</param>
+    /// <param name="col">The color to fill the texture with.</param>
+    /// <returns>The newly created Texture2D.</returns>
+    Texture2D MakeTex(int width, int height, Color col)
+    {
+        Color[] pix = new Color[width * height];
+
+        for (int i = 0; i < pix.Length; i++)
+        {
+            pix[i] = col;
+        }
+
+        Texture2D result = new Texture2D(width, height);
+        result.SetPixels(pix);
+        result.Apply();
+
+        return result;
+    }
+
+    /// <summary>
     /// Defines the content of the UI window drawn in the <code>OnGui</code> method.
     /// </summary>
     /// <param name="windowID"></param>
     public void FillWindow(int windowID)
     {
-        // Start a horizontal group
+
         GUILayout.BeginHorizontal();
-        // Add flexible space
         GUILayout.FlexibleSpace();
-        GUILayout.Label("Toggle Menu: (" + settings.Global.ToggleMenuKey.Value.ToString() + ")", smallLabelStyle);
-        GUILayout.FlexibleSpace();
+
         // Close button on the top right
-        if (GUILayout.Button("X", boldLabelStyle, GUILayout.ExpandWidth(false)))
+        if (GUILayout.Button("CLOSE", GUILayout.ExpandWidth(false)))
         {
             settings.Runtime.IsWindowOpen = false;
 
         }
-        // End the horizontal group
         GUILayout.EndHorizontal();
 
         // Horizontal line
         GUILayout.Box("", new GUILayoutOption[] { GUILayout.ExpandWidth(true), GUILayout.Height(1) });
 
+        GUILayout.Space(5);
+
+        // Mouse steering toggle
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Toggle Mouse Steering:", detailsLabelStyle);
+        GUILayout.FlexibleSpace();
+        DrawSetKeyButton(settings, "ToggleMouseSteeringKey", ref isSettingToggleSteeringKey);
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
         // Flying mode switch
-        GUILayout.Label("Flying Mode (" + settings.Global.ToggleFlyingModeKey.Value.ToString() + "):", boldLabelStyle);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Toggle Flying Mode:", detailsLabelStyle);
+        GUILayout.FlexibleSpace();
+        DrawSetKeyButton(settings, "ToggleFlyingModeKey", ref isSettingFlyingModeKey);
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // Toggle Menu key
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Toggle Menu:", detailsLabelStyle);
+        GUILayout.FlexibleSpace();
+        DrawSetKeyButton(settings, "ToggleMenuKey", ref isSettingToggleMenuKey);
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // Next profile key
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Next Profile:", detailsLabelStyle);
+        GUILayout.FlexibleSpace();
+        DrawSetKeyButton(settings, "NextProfileKey", ref isSettingNextProfileKey);
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // Previous profile key
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Prev. Profile:", detailsLabelStyle);
+        GUILayout.FlexibleSpace();
+        DrawSetKeyButton(settings, "PreviousProfileKey", ref isSettingPreviousProfileKey);
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
+        // Horizontal line
+        GUILayout.Box("", new GUILayoutOption[] { GUILayout.ExpandWidth(true), GUILayout.Height(1) });
+        
+        // Mouse steering toggle
+        settings.Runtime.IsMouseSteeringEnabled = GUILayout.Toggle(settings.Runtime.IsMouseSteeringEnabled, "Enable Mouse Steering", GUILayout.ExpandWidth(false));
+        
+        // Invert Y axis toggle
+        settings.ActiveProfile.IsYAxisInvertedCopy = GUILayout.Toggle(settings.ActiveProfile.IsYAxisInvertedCopy, "Invert Y Axis", GUILayout.ExpandWidth(false));
+        
+        // Auto cam toggle
+        settings.ActiveProfile.IsAutoCamEnabledCopy = GUILayout.Toggle(settings.ActiveProfile.IsAutoCamEnabledCopy, "Enable Auto Camera", GUILayout.ExpandWidth(false));
+        
+        // Flying mode selection
+        GUILayout.Label("Flying Mode:");
         string[] flyingModes = { "Normal", "Alternative" };
         settings.Global.CurrentFlyingMode.Value = (GlobalSettings.FlyingMode)GUILayout.SelectionGrid((int)settings.Global.CurrentFlyingMode.Value, flyingModes, 2);
 
@@ -113,16 +283,7 @@ public class UIManager
         {
             GUILayout.Label("Mouse cursor is unlocked and roll/pitch rate is based on distance from the center of the screen. Deadzone can be configured.", detailsLabelStyle);
         }
-        
-        // Mouse steering toggle
-        settings.Runtime.IsMouseSteeringEnabled = GUILayout.Toggle(settings.Runtime.IsMouseSteeringEnabled, "Enable Mouse Steering (" + settings.Global.ToggleMouseSteeringKey.Value.ToString() + ")", GUILayout.ExpandWidth(false));
-        
-        // Invert Y axis toggle
-        settings.ActiveProfile.IsYAxisInvertedCopy = GUILayout.Toggle(settings.ActiveProfile.IsYAxisInvertedCopy, "Invert Y Axis", GUILayout.ExpandWidth(false));
-        
-        // Auto cam toggle
-        settings.ActiveProfile.IsAutoCamEnabledCopy = GUILayout.Toggle(settings.ActiveProfile.IsAutoCamEnabledCopy, "Enable Auto Camera", GUILayout.ExpandWidth(false));
-        
+
         // Roll sensitivity input
         GUILayout.BeginHorizontal();
         GUILayout.Label("Roll Sensitivity:");
@@ -154,6 +315,7 @@ public class UIManager
             settings.ActiveProfile.YawCorrectionCopy = yawCorrection;
         }
         GUILayout.EndHorizontal();
+        GUILayout.Label("Yaw amount applied to counteract roll (0-5)", detailsLabelStyle, GUILayout.ExpandWidth(false));
         settings.ActiveProfile.YawCorrectionCopy = GUILayout.HorizontalSlider(settings.ActiveProfile.YawCorrectionCopy, 0.0f, 5f);
 
         // Deadzone input
@@ -179,10 +341,9 @@ public class UIManager
             settings.ActiveProfile.SmoothingFactorCopy = smoothingFactor;
         }
         GUILayout.EndHorizontal();
+        GUILayout.Label("Lower is smoother", detailsLabelStyle, GUILayout.ExpandWidth(false));
         settings.ActiveProfile.SmoothingFactorCopy = GUILayout.HorizontalSlider(settings.ActiveProfile.SmoothingFactorCopy, 0.0f, 1.0f);
 
-        // Horizontal line
-        GUILayout.Box("", new GUILayoutOption[] { GUILayout.ExpandWidth(true), GUILayout.Height(1) });
 
         // Profile selection
 
@@ -194,11 +355,7 @@ public class UIManager
         {
             settings.ProfileManager.SetActiveProfile(settings.ProfileManager.Profiles[newSelectedProfileIndex]);
         }
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Previous (" + settings.Global.PreviousProfileKey.Value.ToString() + ")", detailsLabelStyle, GUILayout.ExpandWidth(false));
         GUILayout.FlexibleSpace();
-        GUILayout.Label("Next (" + settings.Global.NextProfileKey.Value.ToString() + ")", detailsLabelStyle, GUILayout.ExpandWidth(false));
-        GUILayout.EndHorizontal();
 
         // Horizontal line
         GUILayout.Box("", new GUILayoutOption[] { GUILayout.ExpandWidth(true), GUILayout.Height(1) });

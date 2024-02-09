@@ -5,20 +5,12 @@ using KSP.UI.Binding;
 using SpaceWarp;
 using SpaceWarp.API.Assets;
 using SpaceWarp.API.Mods;
-using SpaceWarp.API.Game;
-using SpaceWarp.API.Game.Extensions;
 using SpaceWarp.API.UI;
 using SpaceWarp.API.UI.Appbar;
 using UnityEngine;
-using Castle.Components.DictionaryAdapter.Xml;
-using KSP.Game.Load;
-using VehiclePhysics;
-using KSP.Sim.State;
 using BepInEx.Configuration;
-using KSP.Rendering.impl;
-using KSP.Sim.impl;
-using UnityEngine.UI.Extensions;
 using KSP.Game;
+
 
 namespace MouseFlyer;
 
@@ -33,6 +25,9 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
 
     // Singleton instance of the plugin class
     [PublicAPI] public static MouseFlyerPlugin Instance { get; set; }
+
+    // Property to get the current game state
+    public GameState CurrentGameState => (GameState)(GameManager.Instance?.Game?.GlobalGameState?.GetGameState().GameState);
 
     // Settings / Config / UI
     private ConfigFile configFile;
@@ -53,6 +48,9 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
     // Vessel
     public static KSP.Sim.impl.VesselVehicle Vessel { get; private set; }  
 
+    /// <summary>
+    /// Called when the script instance is being loaded.
+    /// </summary>
     void Awake() {
         try {
             
@@ -93,13 +91,20 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
 
     void Update()
     {
-        flightController.HandleKeyPresses();
-
+        // If the GameState is in flight mode
+        if(CurrentGameState == GameState.FlightView)
+        {
+            flightController.HandleKeyPresses();
+        }
     }
 
     void FixedUpdate()
     {
-        flightController.UpdateFlightControls();
+        // If the GameState is in flight mode
+        if(CurrentGameState == GameState.FlightView)
+        {
+            flightController.UpdateFlightControls();
+        }
     }
 
 
@@ -136,7 +141,7 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
         // Set the UI
         GUI.skin = Skins.ConsoleSkin;
 
-        if (settings.Runtime.IsWindowOpen)
+        if (settings.Runtime.IsWindowOpen && (CurrentGameState == GameState.FlightView || CurrentGameState == GameState.Map3DView))
         {
             _windowRect = GUILayout.Window(
                 GUIUtility.GetControlID(FocusType.Passive),
@@ -144,7 +149,7 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
                 uiManager.FillWindow,
                 "MouseFlyer",
                 GUILayout.Height(380),
-                GUILayout.Width(350)
+                GUILayout.Width(380)
             );
         }
     }
