@@ -341,7 +341,7 @@ public class UIManager
             settings.ActiveProfile.SmoothingFactorCopy = smoothingFactor;
         }
         GUILayout.EndHorizontal();
-        GUILayout.Label("Lower is smoother", detailsLabelStyle, GUILayout.ExpandWidth(false));
+        GUILayout.Label("Lower is smoother (0-1)", detailsLabelStyle, GUILayout.ExpandWidth(false));
         settings.ActiveProfile.SmoothingFactorCopy = GUILayout.HorizontalSlider(settings.ActiveProfile.SmoothingFactorCopy, 0.0f, 1.0f);
 
 
