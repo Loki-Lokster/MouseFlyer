@@ -10,6 +10,8 @@ using SpaceWarp.API.UI.Appbar;
 using UnityEngine;
 using BepInEx.Configuration;
 using KSP.Game;
+using UnityEngine.UI;
+using System.Numerics;
 
 
 namespace MouseFlyer;
@@ -136,13 +138,16 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
     /// <summary>
     /// Draws a simple UI window when <code>this._isWindowOpen</code> is set to <code>true</code>.
     /// </summary>
+    
     private void OnGUI()
     {
         // Set the UI
         GUI.skin = Skins.ConsoleSkin;
 
-        if (settings.Runtime.IsWindowOpen && (CurrentGameState == GameState.FlightView || CurrentGameState == GameState.Map3DView))
+        if (CurrentGameState == GameState.FlightView || CurrentGameState == GameState.Map3DView)
         {
+            if (settings.Runtime.IsWindowOpen)
+            {
             _windowRect = GUILayout.Window(
                 GUIUtility.GetControlID(FocusType.Passive),
                 _windowRect,
@@ -151,8 +156,14 @@ public class MouseFlyerPlugin : BaseSpaceWarpPlugin
                 GUILayout.Height(380),
                 GUILayout.Width(380)
             );
+            }
+
+            if (settings.Runtime.IsMouseSteeringEnabled)
+            {
+                // Draw the HUD
+                UnityEngine.Vector2 mousePosition = flightController.GetCurrentMousePosition();
+                uiManager.DrawHUD(mousePosition);
+            }
         }
     }
-    
 }
-

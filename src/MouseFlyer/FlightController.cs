@@ -12,6 +12,7 @@ public class FlightController
 
     // Variables
     public static Vector2 lastInput { get; private set; } = Vector2.zero;
+    private Vector2 virtualMousePosition = new Vector2(Screen.width / 2, Screen.height /2);
     private bool previousMouseSteeringState;
 
     // Constructor
@@ -20,7 +21,6 @@ public class FlightController
         this.settings = settings;
         this.vessel = vessel;
         this.uiManager = uiManager;
-        
     }
     
     public void HandleKeyPresses()
@@ -30,6 +30,10 @@ public class FlightController
         {
             settings.Runtime.IsMouseSteeringEnabled = false;
             uiManager.SetCursorState(null);
+        }
+
+        if (Input.GetKeyDown(settings.Global.ToggleHUDKey.Value)) {
+            settings.Runtime.IsHUDVisible = !settings.Runtime.IsHUDVisible; // Toggle HUD
         }
 
         // If IsMouseSteering is disabled, unlock the cursor
@@ -111,15 +115,31 @@ public class FlightController
             case GlobalSettings.FlyingMode.Alternative:
                 // Set the cursor state
                 uiManager.SetCursorState(settings.Global.CurrentFlyingMode.Value);
-                
+
                 // Measure x,y distance from center of screen to mouse position and multiply 
-                Vector3 mousePosition = Input.mousePosition;
-                float roll = ((mousePosition.x / Screen.width - 0.5f) * 2f) * settings.ActiveProfile.RollSensitivityCopy;
-                float pitch = ((mousePosition.y / Screen.height - 0.5f) * 2f * (settings.ActiveProfile.IsYAxisInvertedCopy ? -1 : 1)) * settings.ActiveProfile.PitchSensitivityCopy;
+                Vector2 mousePosition = Input.mousePosition;
+                Vector2 center = new Vector2(Screen.width / 2, Screen.height / 2);
+                Vector2 direction = mousePosition - center;
+
+                // Constrain the direction to the radius of the outer circle
+                float maxDistance = Screen.height * settings.Global.OuterCircleRadiusRatio.Value;
+                if (direction.magnitude > maxDistance)
+                {
+                    direction = direction.normalized * maxDistance;
+                }
+
+                // Calculate roll and pitch based on the direction
+                float roll = direction.x;
+                float pitch = direction.y * (settings.ActiveProfile.IsYAxisInvertedCopy ? -1 : 1);
 
                 // Deadzone
-                if (Mathf.Abs(roll) < settings.ActiveProfile.DeadzoneCopy) roll = 0;
-                if (Mathf.Abs(pitch) < settings.ActiveProfile.DeadzoneCopy) pitch = 0;
+                float deadzone = maxDistance * settings.ActiveProfile.DeadzoneCopy;
+                if (Mathf.Abs(roll) < deadzone) roll = 0;
+                if (Mathf.Abs(pitch) < deadzone) pitch = 0;
+
+                // Normalize roll and pitch
+                roll = (roll / maxDistance) * settings.ActiveProfile.RollSensitivityCopy;
+                pitch = (pitch / maxDistance) * settings.ActiveProfile.PitchSensitivityCopy;
 
                 input = new Vector2(roll, pitch);
                 break;
@@ -136,8 +156,21 @@ public class FlightController
 
                 // Adjust pitch and roll based on mouse movement and sensitivity
                 float altRoll = mouseMovement.x * settings.ActiveProfile.RollSensitivityCopy;
-                float altPitch = mouseMovement.y * settings.ActiveProfile.PitchSensitivityCopy* (settings.ActiveProfile.IsYAxisInvertedCopy ? -1 : 1);
-                
+                float altPitch = mouseMovement.y * settings.ActiveProfile.PitchSensitivityCopy * (settings.ActiveProfile.IsYAxisInvertedCopy ? -1 : 1);
+
+                // Update the virtual mouse position based on the mouse movement
+                virtualMousePosition += mouseMovement;
+
+                // Clamp the virtual mouse position to the screen bounds
+                virtualMousePosition = new Vector2(Mathf.Clamp(virtualMousePosition.x, 0, Screen.width), Mathf.Clamp(virtualMousePosition.y, 0, Screen.height));
+
+                // If the mouse is not moving, gradually reset the virtual mouse position back to the center
+                if (mouseMovement == Vector2.zero)
+                {
+                    float returnSpeed = settings.ActiveProfile.SmoothingFactorCopy;
+                    virtualMousePosition = Vector2.Lerp(virtualMousePosition, new Vector2(Screen.width / 2, Screen.height / 2), returnSpeed);
+                }
+
                 input = new Vector2(altRoll, altPitch);
                 break;
 
@@ -154,6 +187,21 @@ public class FlightController
         lastInput = input;
 
         return input;
+    }
+
+    public Vector2 GetCurrentMousePosition()
+    {
+        switch (settings.Global.CurrentFlyingMode.Value)
+        {
+            case GlobalSettings.FlyingMode.Alternative:
+                return new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
+
+            case GlobalSettings.FlyingMode.Normal:
+                return virtualMousePosition;
+
+            default:
+                return Vector2.zero;
+        }
     }
 
     void ApplyMouseInputToVessel(Vector2 mouseInput)
